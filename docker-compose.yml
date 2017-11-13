@@ -1,0 +1,11 @@
+version: '3'
+
+services:
+  data-collector:
+    build: .
+    image: nnynn/glouton:v1
+    expose : [9090]
+    ports:
+      - 9090:9090
+    volumes:
+      - ./config:/app/config

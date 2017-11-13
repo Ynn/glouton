@@ -1,0 +1,11 @@
+port : 9090
+mqtt :
+  host : "m99.cloudmqtt.com"
+  port : 18029
+  user : "dsdfsd"
+  pass : "sfsfzefsfdfz"
+influx:
+  host: "http://localhost"
+  port: 8086
+  user: "test"
+  pass: "test"

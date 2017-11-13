@@ -1,0 +1,19 @@
+name : "room925"
+period : 10
+coordinates: [89.11699,-1.6213]
+plannings :
+  r925: "https://planning.example.com/r925.ics"
+
+measures :
+  all :
+    type : "nny.glouton.mapper.ObixRealMapper"
+    url : "http://example.com/obix/config/Drivers/ModbusAsyncNetwork/LEM_salle_925/points/Energie_Active_General_925/out/"
+    unit: "W/H"
+  lighting :
+    type : "nny.glouton.mapper.ObixRealMapper"
+    url : "http://example.com/obix/config/Drivers/ModbusAsyncNetwork/LEM_salle_925/points/Energie_Active_Eclairage_925/out/"
+    unit: "W/H"
+  plugs :
+    type : "nny.glouton.mapper.ObixRealMapper"
+    url : "http://example.com/obix/config/Drivers/ModbusAsyncNetwork/LEM_salle_925/points/Energie_Active_Prises_925/out/"
+    unit: "W/H"

@@ -1,0 +1,11 @@
+name : "istic-labo-ext"
+period : 5
+measures :
+  extTemperature :
+      type : "nny.glouton.mapper.ObixRealMapper"
+      url :  "http://example.com/obix/org/lon/@XBureau922/@XLocations/@XLSI/@XTempSensor/@XnvoOutdoorTemp/$@CSNVT_temp_p/"
+      unit : "°C"
+  lux1 :
+      type : "nny.glouton.mapper.ObixRealMapper"
+      url :  "http://example.com/obix/org/lon/@XBureau922/@XLocations/@XLSI/@XSunSensor/@XnvoSunLux_1/$@CSNVT_lux/"
+      unit : "lux"
