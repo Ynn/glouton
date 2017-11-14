@@ -81,7 +81,7 @@ data class MesureConfig(val type: String, val url: URL) {
                 handler(Future.succeededFuture(value))
             }
         } else {
-            handler(Future.failedFuture("reach max retry"));
+            handler(Future.failedFuture("reach max retry $url"));
         }
     }
 

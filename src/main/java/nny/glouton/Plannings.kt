@@ -1,7 +1,5 @@
 package nny.glouton
 
-import com.google.common.cache.CacheBuilder
-import com.google.common.cache.LoadingCache
 import mu.KotlinLogging
 import net.fortuna.ical4j.data.CalendarBuilder
 import net.fortuna.ical4j.filter.Filter
@@ -19,14 +17,18 @@ import org.ehcache.impl.config.persistence.CacheManagerPersistenceConfiguration
 import java.io.File
 import java.net.URL
 import java.util.concurrent.TimeUnit
-import com.sun.corba.se.impl.orbutil.graph.Graph
-import javax.cache.integration.CacheLoader
-
-
+import java.net.URLDecoder
+import java.io.InputStream
+import java.net.HttpURLConnection
 
 
 data class Planning(val name: String, val url: URL) {
     private val logger = KotlinLogging.logger {}
+
+    init{
+        println("CREATE NEW PLANNING")
+    }
+
 
     companion object {
         val cacheManager = CacheManagerBuilder.newCacheManagerBuilder()
@@ -43,55 +45,69 @@ data class Planning(val name: String, val url: URL) {
             return ""
         }
 
-//        var eventCache: LoadingCache<String, String> = CacheBuilder.newBuilder()
-//                .maximumSize(1000)
-//                .expireAfterWrite(10, TimeUnit.MINUTES)
-//                .build<String, String>(object : CacheLoader<String, String> {
-//                    override fun load(key: String): String {
-//                        return ""
-//                    }
-//                })
-
     }
-
-
 
     fun getCalendar(): Calendar {
         if(!calendarCache.containsKey(name)) {
             val builder = CalendarBuilder()
-            val calendar = builder.build(url.openStream())
-            calendarCache.put(name, calendar);
+            try {
+                val calendar = builder.build(url.openStreamFollowRedirect())
+                calendarCache.put(name, calendar);
+            }catch (e:Exception){
+                logger.error("FAILED TO READ : $url")
+                e.printStackTrace()
+                throw e
+            }
         }
         return calendarCache.get(name);
     }
 
 
+    var lastEvent : String? = null
+    var lastEventTime : Long = 0
+    private val cacheDuration = TimeUnit.MILLISECONDS.convert(10,TimeUnit.SECONDS)
+
     fun getEventNow() : String?{
-        val calendar = this.getCalendar()
-        val today = java.util.Calendar.getInstance()
+        val elapsedTime =System.currentTimeMillis() - lastEventTime
+        if(elapsedTime > cacheDuration) {
+            val calendar = this.getCalendar()
+            val today = java.util.Calendar.getInstance()
 
-        // create a period starting now with a duration of one (1) day..
-        val period = Period(DateTime(today.time), Dur(700, 0, 0, 1))
-        val filter = Filter(PeriodRule<Component>(period))
-        val eventsNow = filter.filter(calendar.getComponents<CalendarComponent>(Component.VEVENT) as Collection<Component>?)
+            // create a period starting now with a duration of one (1) day..
+            val period = Period(DateTime(today.time), Dur(0, 0, 0, 1))
+            val filter = Filter(PeriodRule<Component>(period))
+            val eventsNow = filter.filter(calendar.getComponents<CalendarComponent>(Component.VEVENT) as Collection<Component>?)
 
-        var result = mutableListOf<String>()
-        if (eventsNow.isNotEmpty()) {
-            for(component in eventsNow){
-                val event = component.getProperty<Property>("SUMMARY")?.value?:component.getProperty<Property>("DESCRIPTION")?.value?:"?";
-                result.add(event)
+            var result = mutableListOf<String>()
+            if (eventsNow.isNotEmpty()) {
+                for (component in eventsNow) {
+                    val event = component.getProperty<Property>("SUMMARY")?.value ?: component.getProperty<Property>("DESCRIPTION")?.value ?: "?";
+                    result.add(event)
+                }
             }
+            lastEventTime = System.currentTimeMillis()
+            lastEvent = result.firstOrNull()
+            println("RECOMPUTE $lastEvent elapsed = ${elapsedTime}")
+        }else{
+            println("RETURN CACHE $lastEvent elapsed = ${elapsedTime}")
         }
-
-        return result.firstOrNull();
+        return lastEvent
     }
 }
 
 
 fun main(args: Array<String>) {
-    val plannings = Config.sites["plannings"]?.plannings()?: listOf<Planning>()
+    println(URL("http://labo.domo.4x.re/planning/922.ics").openStreamFollowRedirect())
+
+    println(Config.sites)
+    val plannings = Config.sites["istic-labo"]?.plannings?: listOf<Planning>()
     println(plannings)
     for (planning in plannings) {
-        println(planning.getEventNow())
+        try {
+            println(planning.getEventNow())
+        }catch (e:Exception){
+            e.printStackTrace()
+        }
+
     }
 }

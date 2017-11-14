@@ -62,7 +62,7 @@ public class MainVerticle : AbstractVerticle() {
                     if (res.succeeded()) {
                         val value = res.result();
                         val event = UpdateEvent(site.name, mesureName = mesure.key, mesureValue = value.toString())
-                        for(planning in site.plannings()){
+                        for(planning in site.plannings){
                             val now = planning.getEventNow()
                             if(now!=null){
                                 event.tag(planning.name,now);
