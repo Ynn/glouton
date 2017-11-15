@@ -46,7 +46,7 @@ class InfluxVerticle : io.vertx.core.AbstractVerticle() {
                             for (tag in event.tags) {
                                 point.tag(tag.key, tag.value);
                             }
-                            logger.info { "write point to influx : $dbName" }
+                            //logger.info { "write point to influx : $dbName" }
 
                             influxDB.write(dbName, "autogen", point.build());
                         }catch (e:Exception){
