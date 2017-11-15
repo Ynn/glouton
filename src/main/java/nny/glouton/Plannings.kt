@@ -26,7 +26,7 @@ data class Planning(val name: String, val url: URL) {
     private val logger = KotlinLogging.logger {}
 
     init{
-        println("CREATE NEW PLANNING")
+        logger.trace{"CREATE NEW PLANNING $name:$url"}
     }
 
 
@@ -87,9 +87,9 @@ data class Planning(val name: String, val url: URL) {
             }
             lastEventTime = System.currentTimeMillis()
             lastEvent = result.firstOrNull()
-            println("RECOMPUTE $lastEvent elapsed = ${elapsedTime}")
+            logger.trace {"RECOMPUTE $lastEvent elapsed = ${elapsedTime}"}
         }else{
-            println("RETURN CACHE $lastEvent elapsed = ${elapsedTime}")
+            logger.trace {"RETURN CACHE $lastEvent elapsed = ${elapsedTime}"}
         }
         return lastEvent
     }
