@@ -1,2 +1,4 @@
 #/bin/bash
-sudo docker-compose -f docker-compose.build.yml build
+gradle clean && gradle shadow
+cp build/libs/glouton-all.jar releases/glouton.jar
+sudo docker-compose -f docker-compose.yml build

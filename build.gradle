@@ -86,7 +86,7 @@ run {
 
 // Naming and packaging settings for the "shadow jar".
 shadowJar {
-    baseName = 'data-client'
+    baseName = 'glouton'
     classifier = 'all'
 
     manifest {

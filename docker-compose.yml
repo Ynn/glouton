@@ -1,14 +1,14 @@
 version: '3'
 
 services:
-  data-collector:
+  glouton:
     build: .
     image: nnynn/glouton:latest
     expose : [9090]
     ports:
       - 9090:9090
     volumes:
-      - ./config:/app/config
+      - ./config:/config
     networks:
       - www
   influxdb:
