@@ -37,16 +37,21 @@ class InfluxVerticle : io.vertx.core.AbstractVerticle() {
                             .consistency(InfluxDB.ConsistencyLevel.ALL)
                             .build()
                     val consumer = vertx.eventBus().consumer<String>(EVENT_TYPES.UPDATE_VALUE.toString(), { message ->
-                        val event = Json.decodeValue(message.body(), UpdateEvent::class.java)
-                        val name = getTableName(event.siteName, event.mesureName)
-                        val point = Point.measurement(event.siteName)
-                                .time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
-                                .addField(event.mesureName, event.mesureValue.toDouble())
-                        for (tag in event.tags) {
-                            point.tag(tag.key, tag.value);
-                        }
+                        try {
+                            val event = Json.decodeValue(message.body(), UpdateEvent::class.java)
+                            val name = getTableName(event.siteName, event.mesureName)
+                            val point = Point.measurement(event.siteName)
+                                    .time(System.currentTimeMillis(), TimeUnit.MILLISECONDS)
+                                    .addField(event.mesureName, event.mesureValue.toDouble())
+                            for (tag in event.tags) {
+                                point.tag(tag.key, tag.value);
+                            }
+                            logger.info { "write point to influx : $dbName" }
 
-                        influxDB.write(dbName, "autogen", point.build());
+                            influxDB.write(dbName, "autogen", point.build());
+                        }catch (e:Exception){
+                            logger.error{"FAILED Writing : ${e.message}"}
+                        }
                     })
                 }
             } catch (e: Exception) {

@@ -3,9 +3,21 @@ version: '3'
 services:
   data-collector:
     build: .
-    image: nnynn/glouton:v1
+    image: nnynn/glouton:latest
     expose : [9090]
     ports:
       - 9090:9090
     volumes:
       - ./config:/app/config
+    networks:
+      - www
+  influxdb:
+    image: influxdb:alpine
+    expose : [8086]
+    volumes:
+      - ./data/influxdb:/var/lib/influxdb
+    networks:
+      - www
+networks:
+  www:
+    external : true

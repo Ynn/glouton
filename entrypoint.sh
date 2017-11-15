@@ -1,2 +1,2 @@
 #!/bin/bash
-(cd /app && java -jar /app/build/libs/data-client-all.jar)
+(cd /app && java -jar /app/data-client-all.jar)
