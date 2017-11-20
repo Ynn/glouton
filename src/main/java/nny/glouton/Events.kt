@@ -4,7 +4,8 @@ import java.time.Instant
 
 enum class EVENT_TYPES {
     UPDATE_VALUE,
-    CONFIG_UPDATE
+    CONFIG_UPDATE,
+    HISTORY_REQUEST
 }
 
 data class UpdateEvent(val siteName: String, val mesureName: String, val mesureValue: String) {
@@ -14,3 +15,5 @@ data class UpdateEvent(val siteName: String, val mesureName: String, val mesureV
         tags[name] = value;
     }
 }
+
+data class HistoryRequest(val siteName: String, val mesureName: String? = null)

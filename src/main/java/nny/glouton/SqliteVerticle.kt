@@ -1,5 +1,6 @@
 package nny.glouton
 
+import com.opencsv.CSVWriter
 import io.vertx.core.Future
 import io.vertx.core.eventbus.MessageConsumer
 import io.vertx.core.json.Json
@@ -9,6 +10,9 @@ import io.vertx.kotlin.core.json.array
 import io.vertx.kotlin.core.json.json
 import mu.KotlinLogging
 import java.util.concurrent.CountDownLatch
+import java.io.StringWriter
+
+
 
 
 //SELECT * FROM SERIES JOIN SOURCES WHERE SOURCES.source_id=SERIES.source_id
@@ -103,6 +107,31 @@ class SqliteVerticle : io.vertx.core.AbstractVerticle() {
 
                     }
                 }
+
+                val historyConsumer = vertx.eventBus().consumer<String>(EVENT_TYPES.HISTORY_REQUEST.toString()) { message ->
+                    val event = Json.decodeValue(message.body(), HistoryRequest::class.java)
+
+
+                    val table =if(event.mesureName!=null){
+                        getTableName(event.siteName, event.mesureName)
+                    }else{
+                        getViewName(event.siteName)
+                    }
+                    connection.query("SELECT *  FROM ${table}"){res ->
+                        if (res.succeeded()) {
+                            val resultSet = res.result()
+                            val reply = """
+                                |${resultSet.columnNames.joinToString (",")}
+                                |${resultSet.results.map { it.joinToString (",") }.joinToString ("\n")}
+                                """.trimMargin()
+                            message.reply(reply)
+                        } else {
+                            println("HISTORY REQUEST FAILED ${res.cause()}")
+
+                        }
+                    }
+                }
+
             }
 
         }

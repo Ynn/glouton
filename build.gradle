@@ -69,6 +69,8 @@ dependencies {
     compile 'org.influxdb:influxdb-java:2.7'
     compile group: 'org.codehaus.groovy', name: 'groovy-all', version: '2.4.12'
 
+    compile group: 'com.opencsv', name: 'opencsv', version: '4.1'
+
 }
 
 // Redeploy watcher.
