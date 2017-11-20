@@ -36,32 +36,32 @@ public class MainVerticle : AbstractVerticle() {
         val executor = Executors.newScheduledThreadPool(20);
 
         for (site in Config.sites.values) {
-            for (mesure in site.measures) {
-                fun readValue(maxRetry: AtomicInteger = AtomicInteger(5), handler: (AsyncResult<Any?>) -> Unit): Unit = mesure.value.value {
+            for (measure in site.measures) {
+                fun readValue(maxRetry: AtomicInteger = AtomicInteger(5), handler: (AsyncResult<Any?>) -> Unit): Unit = measure.value {
                     if (maxRetry.decrementAndGet() > 0) {
                         val value = if (it.succeeded()) {
-                            it.result()?.value()
+                            it.result()
                         } else {
-                            logger.warn { "failed to read /${site.name}/${mesure.key} : cause  ${it.cause()}" }
+                            logger.warn { "failed to read /${site.name}/${measure.name} : cause  ${it.cause()}" }
                             null
                         }
                         if (value == null) {
-                            logger.info { "reschedule /${site.name}/${mesure.key} $maxRetry" }
+                            logger.info { "reschedule /${site.name}/${measure.name} $maxRetry" }
                             readValue(maxRetry, handler)
                         } else {
-                            val event = UpdateEvent(site.name, mesureName = mesure.key, mesureValue = value.toString())
+                            val event = UpdateEvent(site.name, mesureName = measure.name, mesureValue = value.toString())
                             vertx.eventBus().publish(EVENT_TYPES.UPDATE_VALUE.toString(), Json.encode(event))
                             handler(Future.succeededFuture(value));
                         }
                     } else {
-                        handler(Future.failedFuture("[maxRetry = $maxRetry] failed to read /${site.name}/${mesure.key} : cause  ${it.cause()}"));
+                        handler(Future.failedFuture("[maxRetry = $maxRetry] failed to read /${site.name}/${measure.name} : cause  ${it.cause()}"));
                     }
                 }
                 logger.info { "Schedule read periodic for ${site.name} : ${site.period}s" }
-                fun readPeriodic(): Unit = mesure.value.valueAsync(maxRetry = 5.atom()) { res ->
+                fun readPeriodic(): Unit = measure.valueRetry(maxRetry = 5.atom()) { res ->
                     if (res.succeeded()) {
                         val value = res.result();
-                        val event = UpdateEvent(site.name, mesureName = mesure.key, mesureValue = value.toString())
+                        val event = UpdateEvent(site.name, mesureName = measure.name, mesureValue = value.toString())
                         for(planning in site.plannings){
                             val now = planning.getEventNow()
                             if(now!=null){
@@ -127,13 +127,14 @@ public class MainVerticle : AbstractVerticle() {
         try {
             val siteName = req.pathParam("name");
             val valueName = req.pathParam("value");
+            val measure = Config.sites[siteName]?.measures?.find { it.name==valueName }
             println("Seek for " + valueName)
-            if (Config.sites.containsKey(siteName) && Config.sites[siteName]?.measures?.containsKey(valueName) ?: false) {
-                val value = Config.sites[siteName]?.measures!![valueName]?.value {
+            if (measure!=null) {
+                val value = measure?.value {
                     println("Callback")
                     if (it.succeeded()) {
                         println("success")
-                        req.response().end(it.result().value().toString())
+                        req.response().end(it.result().toString())
                     } else {
                         println("failed")
                         req.response().setStatusCode(404).end("not found")

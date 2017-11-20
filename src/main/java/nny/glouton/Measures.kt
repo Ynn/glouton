@@ -1,17 +1,13 @@
 package nny.glouton
 
-import com.fasterxml.jackson.annotation.JsonAnyGetter
-import com.fasterxml.jackson.annotation.JsonAnySetter
 import com.fasterxml.jackson.dataformat.xml.XmlMapper
-import com.fasterxml.jackson.dataformat.xml.annotation.JacksonXmlProperty
 import com.fasterxml.jackson.module.kotlin.KotlinModule
+import groovy.util.Eval
 import io.vertx.core.AsyncResult
 import io.vertx.core.Future
 import mu.KotlinLogging
 import java.net.URL
-import java.util.*
 import java.util.concurrent.atomic.AtomicInteger
-import kotlin.system.measureNanoTime
 
 
 val mapperXML = XmlMapper().registerModule(KotlinModule())
@@ -54,30 +50,59 @@ fun <T : Any> URL.asyncReadXml(clazz: Class<T>, handler: (AsyncResult<T>) -> Uni
     }
 }
 
-data class MesureConfig(val type: String, val url: URL) {
+data class Measure(val type: String, val url: URL, val transform: String? = null) {
+    lateinit var name:String
 
     private val logger = KotlinLogging.logger {}
 
-    val mapper: MesureTypeMapper<*> by lazy {
-        Class.forName(type).newInstance() as MesureTypeMapper<*>;
+    val mapper: MeasureType<*> by lazy {
+        //retrieve the associated class (manages alias)
+        Class.forName(Config.server.types[type]?:type).newInstance() as MeasureType<*>;
     }
 
-    fun value(block: (AsyncResult<out Mesure<out Any?>>) -> Unit) {
-        mapper.from(url, block)
+    /**
+     * Retrieve the value and return it by calling the block function when the value is ready :
+     */
+    fun value(handler: (AsyncResult<out Any?>) -> Unit) {
+        mapper.value(url){
+            if (it.succeeded()) {
+                var value = it.result()
+                //handle and transform the value :
+                if(value != null) {
+                    try {
+                        if(transform!=null){
+                            value = Eval.x( value, transform)
+                        }
+                        handler(Future.succeededFuture(value))
+                    }catch (e:Exception){
+                        handler(Future.failedFuture(e))
+                    }
+                }else{
+                    handler(Future.failedFuture(it.cause()))
+                }
+            }else{
+                handler(Future.failedFuture(it.cause()))
+            }
+        }
     }
 
-    fun valueAsync(maxRetry: AtomicInteger = 1.atom(), handler: (AsyncResult<Any?>) -> Unit): Unit = value {
+    /**
+     * Retrieve the value and retry when failed until max has not been reached
+     */
+    fun valueRetry(maxRetry: AtomicInteger = 1.atom(), handler: (AsyncResult<Any?>) -> Unit): Unit = value {
         if (maxRetry.decrementAndGet() >= 0) {
             val value = if (it.succeeded()) {
-                it.result()?.value()
+                it.result()
             } else {
                 logger.warn { "failed to read : cause  ${it.cause()}" }
                 null
             }
             if (value == null) {
                 logger.info { "retry $maxRetry" }
-                valueAsync(maxRetry, handler)
+                //we need to try again :
+                valueRetry(maxRetry, handler)
             } else {
+                //the value can be given to the handler :
                 handler(Future.succeededFuture(value))
             }
         } else {
@@ -88,25 +113,8 @@ data class MesureConfig(val type: String, val url: URL) {
 }
 
 
-interface MesureTypeMapper<T> {
-    fun from(url: URL, block: (AsyncResult<Mesure<T>>) -> Unit)
-}
-
-abstract class Mesure<R> {
-    abstract fun value(): R?
-
-    var unknownFields: MutableMap<String, String> = HashMap()
-
-    // Capture all other fields that Jackson do not match other members
-    @JsonAnyGetter
-    fun otherFields(): Map<String, String> {
-        return unknownFields
-    }
-
-    @JsonAnySetter
-    fun setOtherField(name: String, value: String) {
-        unknownFields.put(name, value)
-    }
+interface MeasureType<T> {
+    fun value(url: URL, block: (AsyncResult<T>) -> Unit)
 }
 
 

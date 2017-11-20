@@ -13,7 +13,7 @@ import java.util.concurrent.CountDownLatch
 
 //SELECT * FROM SERIES JOIN SOURCES WHERE SOURCES.source_id=SERIES.source_id
 //SELECT * FROM SERIES JOIN SOURCES WHERE SOURCES.source_id=SERIES.source_id AND name="/istic-labo-ext/extTemperature";
-//select avg(lux2.timestamp),lux1.value,lux2.value from istic_labo_ext$lux1 lux1 inner join istic_labo_ext$lux2 lux2 on lux1.timestamp/10=lux2.timestamp/10 GROUP BY lux1.timestamp;
+//select avg(lux2.timestamp),lux1.value,lux2.value value istic_labo_ext$lux1 lux1 inner join istic_labo_ext$lux2 lux2 on lux1.timestamp/10=lux2.timestamp/10 GROUP BY lux1.timestamp;
 
 
 class SqliteVerticle : io.vertx.core.AbstractVerticle() {
@@ -50,15 +50,15 @@ class SqliteVerticle : io.vertx.core.AbstractVerticle() {
 
         for (site in Config.sites.values) {
             val selects = mutableListOf<String>()
-            for (mesure in site.measures) {
-                val tableName = getTableName(site.name, mesure.key)
+            for (measure in site.measures) {
+                val tableName = getTableName(site.name, measure.name)
                 val request = """CREATE TABLE ${tableName}(
                             |series_id INTEGER PRIMARY KEY ASC,
                             |timestamp INTEGER,
                             |value REAL
                             |);""".trimMargin();
                 createBatch.add(request)
-                selects.add("SELECT *, '${mesure.key}' as Name FROM ${tableName}")
+                selects.add("SELECT *, '${measure.name}' as Name FROM ${tableName}")
             }
 
             if (selects.isNotEmpty()) {

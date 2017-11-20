@@ -4,7 +4,6 @@ buildscript {
         vertx_version = '3.5.0'
         ktor_version = '0.4.0'
         sl4j_version = '1.7.25'
-
     }
     repositories {
         jcenter()
@@ -59,19 +58,16 @@ dependencies {
     compile "io.vertx:vertx-mqtt:$vertx_version"
     compile "io.vertx:vertx-web-client:$vertx_version"
     compile "io.vertx:vertx-jdbc-client:$vertx_version"
-
-
     compile "com.fasterxml.jackson.module:jackson-module-kotlin:2.9.0"
-
 
     compile group: 'org.mnode.ical4j', name: 'ical4j', version: '2.1.1'
     compile group: 'org.ehcache', name: 'ehcache', version: '3.4.0'
-
 
     compile group: 'com.google.guava', name: 'guava', version: '23.0'
     compile group: 'org.xerial', name: 'sqlite-jdbc', version: '3.20.1'
 
     compile 'org.influxdb:influxdb-java:2.7'
+    compile group: 'org.codehaus.groovy', name: 'groovy-all', version: '2.4.12'
 
 }
 
@@ -98,7 +94,7 @@ shadowJar {
 }
 
 task wrapper(type: Wrapper) {
-    gradleVersion = '2.13'
+    gradleVersion = '4.3.1'
 }
 
 // Heroku relies on the 'stage' task to deploy.
